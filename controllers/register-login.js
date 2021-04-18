@@ -17,6 +17,20 @@ exports.findall = (req, res) => {
     });
 }
 
+exports.findOne = (req, res) => {
+var id =req.params.id
+var sql="Select *from users where id = ?"
+  db.query(sql,[id],(err,results) =>{
+      if(err){
+          return console.error(err.message);
+      }
+      res.status(200).json({
+          status: 200,
+          message: "Successfully View your data",
+          data:results
+      });
+  });
+}
 
 /************Registration call****************/
 exports.register = (req, res, next) => {
@@ -48,6 +62,7 @@ exports.register = (req, res, next) => {
           else var sql = "INSERT INTO users (first_name,last_name,email,phone_number,password) VALUES ?";
           var values = [[first_name,last_name, email,phone_number, hash]];
           var token = jwt.sign({ _id:email},'abcde');
+          var decode=jwt.decode(token,{complete:true})
           db.query(sql, [values], function (err, data) {
             if (err) throw err;
             else {
@@ -68,6 +83,8 @@ exports.register = (req, res, next) => {
                         message: "Successfully Login",
                         data: results,
                         token:token,
+                        tokenheader:decode.header,
+                        tokenpayload:decode.payload
                       });
                     }
                   });
@@ -107,7 +124,9 @@ exports.addData=(req, res)=> {
         else
         {
             // const id = req.body.id;
+            // console.log(id)
             const filePath = req.file.filename;
+            console.log(filePath)
             // var sql = "UPDATE users SET profile_picture = ? WHERE id = "+id
              var sql = "UPDATE users SET profile_pic = ? WHERE id = "+req.body.id
             var values = [[filePath]]
@@ -122,7 +141,8 @@ exports.addData=(req, res)=> {
                 // console.log("Data Successfully Uploaded")
                 res.status(200).json({
                   status:"file upload Successfully",
-                  data: results
+                  data: results,
+                  image:filePath
                 })            
               }   
             })
@@ -136,6 +156,8 @@ exports.addData=(req, res)=> {
 module.exports.login=function(req,res){
   var email=req.body.email;
   var password=req.body.password;
+  var token = jwt.sign({ _id:email},'abcde');
+  var decode=jwt.decode(token,{complete:true})
   db.query('SELECT * FROM users WHERE email = ?',[email], function (error, results, fields) {
     if (error) {
         res.status(400).json({
@@ -158,7 +180,10 @@ module.exports.login=function(req,res){
             res.status(200).json({
               status:true,
               message:"successfully login",
-              data:results
+              data:results,
+              token:token,
+              tokenheader:token.tokenheader,
+              tokenpayload:token.tokenpayload
             });
           }
         }) 
@@ -250,82 +275,7 @@ exports.updatePost = (req, res) => {
 };
 
 
-  //********// */
-  //posts data
   
-var upload = multer({storage : storage}).single("image");
-exports.posts=(req, res)=> {
-    upload(req, res, function(err){
-        if(err)
-        console.log(err.message);
-        else
-        {
-            const user_id=req.body.user_id;
-            const caption=req.body.caption
-            const filePath = req.file.filename;
-            console.log('user_id',user_id)
-            console.log('caption',caption)
-            console.log(filePath)
-            // var sql = "UPDATE users SET profile_picture = ? WHERE id = "+id
-             var sql = "INSERT INTO posts (user_id,image,caption) VALUES ?"
-            var values = [[user_id,filePath,caption]]
-            db.query(sql ,[values],(err, results) => {
-              if(err) 
-              {
-              res.status(400).json({
-                status: "fails",
-                err:err.message
-              })}
-              else{
-                // console.log("Data Successfully Uploaded")
-                res.status(200).json({
-                  status:"file upload Successfully",
-                  data: results
-                })            
-              }   
-            })
-         }
-      })
-  }
+  
 
-///***// */
-//upload file on local folder
-var upload = multer({storage : storage}).single("image");
-exports.post=(req, res)=> {
-    upload(req, res, function(err){
-        if(err)
-        console.log(err.message);
-        else
-        {
-          const file=req.file
-          console.log(file.filename)
-          if(!file){
-            console.log("error in file")
-          }
-          else{
-            res.send(file)
-          }
-            // const user_id=req.body.user_id;
-            // const caption=req.body.caption
-            // const filePath = req.file.filename;
-            // var sql = "UPDATE users SET profile_picture = ? WHERE id = "+id
-            //  var sql = "INSERT INTO posts (user_id,image,caption) VALUES ?"
-            // var values = [[user_id,filePath,caption]]
-            // db.query(sql ,[values],(err, results) => {
-            //   if(err) 
-            //   {
-            //   res.status(400).json({
-            //     status: "fails",
-            //     err:err.message
-            //   })}
-            //   else{
-            //     // console.log("Data Successfully Uploaded")
-            //     res.status(200).json({
-            //       status:"file upload Successfully",
-            //       data: results
-            //     })            
-            //   }   
-            // })
-         }
-      })
-  }
+
